@@ -151,46 +151,110 @@ function normalizar(txt){
 
 function extraerDatos(texto){
 
+    texto = texto.replace(/\s+/g, " ");
+
+    const patrones = {
+
+        "Consultas totales":
+            /Consultas\s+totales\s+64\s+(\d+)/i,
+
+        "Signos vitales y somatometría":
+            /Signos\s+vitales\s+y\s+somatometría\s+(\d+)/i,
+
+        "Usuarios atendidos":
+            /Usuarios\s+atendidos\s+(\d+)/i,
+
+        "Consultas a mujeres embarazadas":
+            /Consultas\s+a\s+mujeres\s+embarazadas\s+(\d+)/i,
+
+        "Consultas a niños por EDA":
+            /Consultas\s+a\s+niños\s+por\s+EDA\S*\s+(\d+)/i,
+
+        "Consultas a niños por IRA":
+            /Consultas\s+a\s+niños\s+por\s+IRA\S*\s+(\d+)/i,
+
+        "Consultas a Diabéticos":
+            /Consultas\s+a\s+Diabéticos\s+(\d+)/i,
+
+        "Consultas a Hipertensos":
+            /Consultas\s+a\s+Hipertensos\s+(\d+)/i,
+
+        "Consultas odontológicas":
+            /Consultas\s+odontológicas\s+24\s+(\d+)/i,
+
+        "Pacientes atendidos en Laboratorio clínico":
+            /Laboratorio\s+clínico\s+36\s+(\d+)/i,
+
+        "Antígeno prostático específico":
+            /PSA\)\s+INDETERMINADO\s+(\d+)/i,
+
+        "Pacientes atendidos en Rayos X":
+            /Rayos\s+X\s+30\s+(\d+)/i,
+
+        "Pacientes atendidos en Mastografía":
+            /Mastografía\s+45\s+(\d+)/i,
+
+        "Pacientes atendidos totales en Ultrasonido":
+            /Ultrasonido\s+25\s+(\d+)/i,
+
+        "Pacientes atendidos en US Obstétrico":
+            /US\s+Obstétrico\s+(\d+)/i,
+
+        "Pacientes atendidos en US Pélvico":
+            /US\s+Pélvico\s+(\d+)/i,
+
+        "Pacientes atendidos en Densitometría":
+            /Densitometría\s+30\s+(\d+)/i,
+
+        "Pacientes atendidos en Electrocardiograma":
+            /Electrocardiograma\s+30\s+(\d+)/i,
+
+        "Pacientes atendidos en Optometría":
+            /Optometría\s+15\s+(\d+)/i,
+
+        "Pacientes atendidos en Audiometría":
+            /Audiometría\s+20\s+(\d+)/i,
+
+        "Pacientes atendidos en Nutrición":
+            /Nutrición\s+10\s+(\d+)/i,
+
+        "Pacientes atendidos en Psicología":
+            /Psicología\s+45\s+(\d+)/i,
+
+        "Pacientes atendidos en Ambulancia de traslado":
+            /Ambulancia\s+de\s+traslado\s+INDETERMINADO\s+(\d+)/i,
+
+        "Pacientes atendidos en Farmacia":
+            /Farmacia\s+64\s+(\d+)/i,
+
+        "Pacientes atendidos en Pediculosis":
+            /Pediculosis\s+30\s+(\d+)/i,
+
+        "Promoción de la salud":
+            /Promoción\s+de\s+la\s+salud\s+24\s+(\d+)/i,
+
+        "Gestiones":
+            /Gestiones\s+INDETERMINADO\s+(\d+)/i,
+
+        "Total":
+            /Total\s+556\s+(\d+)/i
+    };
+
     const datos = {};
 
-    const lineas =
-        texto
-        .split(/\n+/)
-        .map(x=>x.trim());
+    for(const [servicio, regex] of Object.entries(patrones)){
 
-    for(const linea of lineas){
+        const m = texto.match(regex);
 
-        const limpia = normalizar(linea);
-
-        for(const servicio of SERVICIOS){
-
-            const servicioNorm =
-                normalizar(servicio);
-
-            if(limpia.includes(servicioNorm)){
-
-                const nums =
-                linea.match(/-?\d+/g);
-
-                if(nums){
-
-                    const ultimo =
-                    parseInt(
-                        nums[nums.length-1]
-                    );
-
-                    datos[servicio] = ultimo;
-                }
-                else{
-                    datos[servicio] = 0;
-                }
-            }
-        }
+        datos[servicio] = m
+            ? parseInt(m[1])
+            : 0;
     }
 
     return datos;
 }
 
+    
 function llenarHoja(ws, datos){
 
     const rango =
@@ -279,9 +343,9 @@ async function procesar(){
         await extraerTextoPDF(js1);
 
 
-console.log(txt1);
+//console.log(txt1);
 
-alert(txt1.substring(0,2000));
+//alert(txt1.substring(0,2000));
 
         log("Leyendo JS2...");
         const txt2 =
@@ -293,7 +357,7 @@ alert(txt1.substring(0,2000));
 
         const datos1 =
         extraerDatos(txt1);
-
+console.log(datos1);
         const datos2 =
         extraerDatos(txt2);
 
