@@ -278,6 +278,12 @@ async function procesar(){
         const txt1 =
         await extraerTextoPDF(js1);
 
+        const txt1 = await extraerTextoPDF(js1);
+
+console.log(txt1);
+
+alert(txt1.substring(0,2000));
+
         log("Leyendo JS2...");
         const txt2 =
         await extraerTextoPDF(js2);
