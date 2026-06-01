@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDF a Excel - Productividad</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.5.136/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+body{
+    font-family: Arial, sans-serif;
+    max-width:900px;
+    margin:auto;
+    padding:20px;
+}
+
+.card{
+    border:1px solid #ccc;
+    border-radius:10px;
+    padding:15px;
+    margin-bottom:15px;
+}
+
+button{
+    padding:12px 20px;
+    font-size:16px;
+    cursor:pointer;
+}
+
+input{
+    margin-top:10px;
+    margin-bottom:10px;
+}
+
+#log{
+    background:#f5f5f5;
+    padding:10px;
+    border-radius:5px;
+    white-space:pre-wrap;
+}
+</style>
+</head>
+<body>
+
+<h2>Consolidar PDFs de Productividad</h2>
+
+<div class="card">
+    <label>Plantilla Excel:</label><br>
+    <input type="file" id="excel" accept=".xlsx">
+</div>
+
+<div class="card">
+    <label>PDF JS1</label><br>
+    <input type="file" id="js1" accept=".pdf"><br>
+
+    <label>PDF JS2</label><br>
+    <input type="file" id="js2" accept=".pdf"><br>
+
+    <label>PDF JS3</label><br>
+    <input type="file" id="js3" accept=".pdf">
+</div>
+
+<button onclick="procesar()">
+Generar Consolidado
+</button>
+
+<h3>Log</h3>
+<div id="log"></div>
+
+<script>
+
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.5.136/pdf.worker.min.js';
+
+function log(msg){
+    document.getElementById("log").innerHTML += msg + "\n";
+}
+
+const SERVICIOS = [
+
+"Consultas totales",
+"Signos vitales y somatometría",
+"Usuarios atendidos",
+"Consultas a mujeres embarazadas",
+"Consultas a niños por EDA",
+"Consultas a niños por IRA",
+"Consultas a Diabéticos",
+"Consultas a Hipertensos",
+"Consultas odontológicas",
+"Pacientes atendidos en Laboratorio clínico",
+"Antígeno prostático específico",
+"Pacientes atendidos en Rayos X",
+"Pacientes atendidos en Mastografía",
+"Pacientes atendidos totales en Ultrasonido",
+"Pacientes atendidos en US Obstétrico",
+"Pacientes atendidos en US Pélvico",
+"Pacientes atendidos en Densitometría",
+"Pacientes atendidos en Electrocardiograma",
+"Pacientes atendidos en Optometría",
+"Pacientes atendidos en Audiometría",
+"Pacientes atendidos en Nutrición",
+"Pacientes atendidos en Psicología",
+"Pacientes atendidos en Ambulancia de traslado",
+"Pacientes atendidos en Farmacia",
+"Pacientes atendidos en pediculosis",
+"Promoción de la salud",
+"Gestiones",
+"Total"
+
+];
+
+async function extraerTextoPDF(file){
+
+    const data = await file.arrayBuffer();
+
+    const pdf =
+    await pdfjsLib.getDocument({
+        data
+    }).promise;
+
+    let texto = "";
+
+    for(let p=1;p<=pdf.numPages;p++){
+
+        const page = await pdf.getPage(p);
+
+        const content =
+        await page.getTextContent();
+
+        texto += content.items
+            .map(i=>i.str)
+            .join(" ");
+
+        texto += "\n";
+    }
+
+    return texto;
+}
+
+function normalizar(txt){
+
+    return txt
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g,"")
+        .replace(/\s+/g," ")
+        .trim();
+}
+
+function extraerDatos(texto){
+
+    const datos = {};
+
+    const lineas =
+        texto
+        .split(/\n+/)
+        .map(x=>x.trim());
+
+    for(const linea of lineas){
+
+        const limpia = normalizar(linea);
+
+        for(const servicio of SERVICIOS){
+
+            const servicioNorm =
+                normalizar(servicio);
+
+            if(limpia.includes(servicioNorm)){
+
+                const nums =
+                linea.match(/-?\d+/g);
+
+                if(nums){
+
+                    const ultimo =
+                    parseInt(
+                        nums[nums.length-1]
+                    );
+
+                    datos[servicio] = ultimo;
+                }
+                else{
+                    datos[servicio] = 0;
+                }
+            }
+        }
+    }
+
+    return datos;
+}
+
+function llenarHoja(ws, datos){
+
+    const rango =
+    XLSX.utils.decode_range(ws["!ref"]);
+
+    for(let row=1;
+        row<=rango.e.r+1;
+        row++){
+
+        const celdaServicio =
+        ws["B"+row];
+
+        if(!celdaServicio)
+            continue;
+
+        const servicioExcel =
+            normalizar(
+                String(celdaServicio.v)
+            );
+
+        for(const [servicio, valor]
+             of Object.entries(datos)){
+
+            const servicioPDF =
+                normalizar(servicio);
+
+            if(servicioExcel.includes(servicioPDF) ||
+               servicioPDF.includes(servicioExcel)){
+
+                ws["E"+row] = {
+                    t:"n",
+                    v:valor
+                };
+
+                break;
+            }
+        }
+    }
+}
+
+async function procesar(){
+
+    try{
+
+        document.getElementById("log").innerHTML="";
+
+        const excelFile =
+        document.getElementById("excel").files[0];
+
+        const js1 =
+        document.getElementById("js1").files[0];
+
+        const js2 =
+        document.getElementById("js2").files[0];
+
+        const js3 =
+        document.getElementById("js3").files[0];
+
+        if(!excelFile ||
+           !js1 ||
+           !js2 ||
+           !js3){
+
+            alert(
+            "Seleccione Excel y los 3 PDFs"
+            );
+            return;
+        }
+
+        log("Leyendo Excel...");
+
+        const excelBuffer =
+        await excelFile.arrayBuffer();
+
+        const wb =
+        XLSX.read(
+            excelBuffer,
+            {
+                type:"array",
+                cellFormula:true
+            }
+        );
+
+        log("Leyendo JS1...");
+        const txt1 =
+        await extraerTextoPDF(js1);
+
+        log("Leyendo JS2...");
+        const txt2 =
+        await extraerTextoPDF(js2);
+
+        log("Leyendo JS3...");
+        const txt3 =
+        await extraerTextoPDF(js3);
+
+        const datos1 =
+        extraerDatos(txt1);
+
+        const datos2 =
+        extraerDatos(txt2);
+
+        const datos3 =
+        extraerDatos(txt3);
+
+        llenarHoja(
+            wb.Sheets["Jurisdiccion1"],
+            datos1
+        );
+
+        llenarHoja(
+            wb.Sheets["Jurisdiccion2"],
+            datos2
+        );
+
+        llenarHoja(
+            wb.Sheets["Jurisdiccion3"],
+            datos3
+        );
+
+        log("Generando Excel...");
+
+        XLSX.writeFile(
+            wb,
+            "PRODUCTIVIDAD_CONSOLIDADA.xlsx"
+        );
+
+        log("Proceso terminado.");
+
+    }
+    catch(error){
+
+        console.error(error);
+
+        alert(
+        "Error: " + error.message
+        );
+    }
+}
+
+</script>
+
+</body>
+</html>
