@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Consolidador de Productividad</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+--primary:#0f2d52;
+--primary2:#1e5aa8;
+--success:#16a34a;
+--bg:#f4f7fb;
+--card:#fff;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,sans-serif;background:var(--bg);color:#1f2937}
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:260px;background:linear-gradient(180deg,#082244,#0f2d52);color:#fff;padding:24px}
+.logo{font-size:28px;font-weight:700;margin-bottom:30px}
+.main{margin-left:260px;padding:24px}
+.card{background:#fff;border-radius:16px;padding:20px;box-shadow:0 4px 18px rgba(0,0,0,.08);margin-bottom:20px}
+h1{margin-top:0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+input[type=file]{width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;margin:8px 0}
+button{background:var(--success);color:#fff;border:none;padding:14px 22px;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer}
+#log{height:320px;overflow:auto;background:#0b1220;color:#d1fae5;padding:10px;border-radius:10px;font-family:monospace}
+@media(max-width:900px){.sidebar{position:relative;width:auto}.main{margin-left:0}.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="sidebar">
+<div class="logo">FMedical</div>
+<div>Consolidador PDF → Excel</div>
+</div>
+
+<div class="main">
+<div class="card">
+<h1>Consolidador de Productividad</h1>
+<p>Cargue la plantilla Excel y los reportes PDF.</p>
+</div>
+
+<div class="grid">
+<div class="card">
+<h3>Archivos</h3>
+<label>Plantilla Excel</label>
+<input type="file" id="excel" accept=".xlsx">
+
+<label>PDF JS1</label>
+<input type="file" id="js1" accept=".pdf">
+
+<label>PDF JS2</label>
+<input type="file" id="js2" accept=".pdf">
+
+<label>PDF JS3</label>
+<input type="file" id="js3" accept=".pdf">
+
+<button>Generar Consolidado</button>
+</div>
+
+<div class="card">
+<h3>Registro</h3>
+<div id="log">Versión base generada correctamente.\nIntegre aquí la lógica PDF.js + SheetJS que ya validaste.</div>
+</div>
+</div>
+</div>
+</body>
+</html>
