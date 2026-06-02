@@ -78,6 +78,37 @@ function log(msg){
     document.getElementById("log").innerHTML += msg + "\n";
 }
 
+const MAPEO_EXCEL = {
+    "consultas totales": 3,
+    "signos vitales y somatometria": 4,
+    "usuarios atendidos": 5,
+    "consultas a mujeres embarazadas": 6,
+    "consultas a niños por eda´s": 7,
+    "consultas a niños por ira´s": 8,
+    "consultas a diabeticos": 9,
+    "consultas a hipertensos": 10,
+    "consultas odontologicas": 11,
+    "pacientes atendidos en laboratorio clinico": 12,
+    "antigeno prostatico especifico (psa)": 13,
+    "pacientes atendidos en rayos x": 14,
+    "pacientes atendidos en mastografia": 15,
+    "pacientes atendidos totales en ultrasonido": 16,
+    "pacientes atendidos en us obstetrico": 17,
+    "pacientes atendidos en us pelvico": 18,
+    "pacientes atendidos en densitometria": 19,
+    "pacientes atendidos en electrocardiograma": 20,
+    "pacientes atendidos en optometria": 21,
+    "pacientes atendidos en audiometria": 22,
+    "pacientes atendidos en nutricion": 23,
+    "pacientes atendidos en psicologia": 24,
+    "pacientes atendidos en ambulancia de traslado": 25,
+    "pacientes atendidos en farmacia": 26,
+    "pacientes atendidos en pediculosis": 27,
+    "promocion de la salud": 28,
+    "gestiones": 29,
+    "total": 30
+};
+    
 const SERVICIOS = [
 
 "Consultas totales",
@@ -257,41 +288,16 @@ function extraerDatos(texto){
     
 function llenarHoja(ws, datos){
 
-    const rango =
-    XLSX.utils.decode_range(ws["!ref"]);
+    for(const [servicio, valor] of Object.entries(datos)){
 
-    for(let row=1;
-        row<=rango.e.r+1;
-        row++){
+        const fila = MAPEO_EXCEL[servicio];
 
-        const celdaServicio =
-        ws["B"+row];
+        if(!fila) continue;
 
-        if(!celdaServicio)
-            continue;
-
-        const servicioExcel =
-            normalizar(
-                String(celdaServicio.v)
-            );
-
-        for(const [servicio, valor]
-             of Object.entries(datos)){
-
-            const servicioPDF =
-                normalizar(servicio);
-
-            if(servicioExcel.includes(servicioPDF) ||
-               servicioPDF.includes(servicioExcel)){
-
-                ws["E"+row] = {
-                    t:"n",
-                    v:valor
-                };
-
-                break;
-            }
-        }
+        ws[`E${fila}`] = {
+            t: "n",
+            v: valor
+        };
     }
 }
 
