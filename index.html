@@ -286,21 +286,58 @@ function extraerDatos(texto){
 }
 
     
-function llenarHoja(ws, datos){
+function limpiar(s){
 
-    for(const [servicio, valor] of Object.entries(datos)){
-
-        const fila = MAPEO_EXCEL[servicio];
-
-        if(!fila) continue;
-
-        ws[`E${fila}`] = {
-            t: "n",
-            v: valor
-        };
-    }
+    return String(s)
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g,"")
+        .toLowerCase()
+        .trim();
 }
 
+function llenarHoja(ws, datos){
+
+    const rango =
+        XLSX.utils.decode_range(ws["!ref"]);
+
+    for(let fila=1;
+        fila<=rango.e.r+1;
+        fila++){
+
+        const servicioCell =
+            ws["B"+fila];
+
+        if(!servicioCell)
+            continue;
+
+        const servicioExcel =
+            limpiar(servicioCell.v);
+
+        for(const [servicio, valor]
+            of Object.entries(datos)){
+
+            const servicioPDF =
+                limpiar(servicio);
+
+            if(servicioExcel === servicioPDF){
+
+                console.log(
+                    "Fila:",
+                    fila,
+                    servicio,
+                    valor
+                );
+
+                ws["E"+fila] = {
+                    t:"n",
+                    v:valor
+                };
+
+                break;
+            }
+        }
+    }
+}
 async function procesar(){
 
     try{
