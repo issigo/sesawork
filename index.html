@@ -1,68 +1,124 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Consolidador de Productividad</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<title>FMedical - Consolidador</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-:root{
---primary:#0f2d52;
---primary2:#1e5aa8;
---success:#16a34a;
---bg:#f4f7fb;
---card:#fff;
-}
-*{box-sizing:border-box}
-body{margin:0;font-family:Inter,sans-serif;background:var(--bg);color:#1f2937}
-.sidebar{position:fixed;left:0;top:0;bottom:0;width:260px;background:linear-gradient(180deg,#082244,#0f2d52);color:#fff;padding:24px}
-.logo{font-size:28px;font-weight:700;margin-bottom:30px}
-.main{margin-left:260px;padding:24px}
-.card{background:#fff;border-radius:16px;padding:20px;box-shadow:0 4px 18px rgba(0,0,0,.08);margin-bottom:20px}
-h1{margin-top:0}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
-input[type=file]{width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;margin:8px 0}
-button{background:var(--success);color:#fff;border:none;padding:14px 22px;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer}
-#log{height:320px;overflow:auto;background:#0b1220;color:#d1fae5;padding:10px;border-radius:10px;font-family:monospace}
-@media(max-width:900px){.sidebar{position:relative;width:auto}.main{margin-left:0}.grid{grid-template-columns:1fr}}
+body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:#f4f7fb}
+.side{position:fixed;left:0;top:0;bottom:0;width:240px;background:#0f2d52;color:#fff;padding:20px}
+.main{margin-left:240px;padding:24px}
+.card{background:#fff;border-radius:14px;padding:18px;margin-bottom:18px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+input{width:100%;margin:6px 0 12px;padding:8px}
+button{background:#16a34a;color:#fff;border:0;padding:12px 18px;border-radius:8px;cursor:pointer}
+#log{height:260px;overflow:auto;background:#08111f;color:#b7f7c3;padding:10px;font-family:monospace}
 </style>
 </head>
 <body>
-<div class="sidebar">
-<div class="logo">FMedical</div>
-<div>Consolidador PDF → Excel</div>
-</div>
-
+<div class="side"><h2>FMedical</h2><p>PDF → Excel</p></div>
 <div class="main">
 <div class="card">
-<h1>Consolidador de Productividad</h1>
-<p>Cargue la plantilla Excel y los reportes PDF.</p>
+<h2>Consolidador Productividad</h2>
+<label>Plantilla XLSX</label><input id="excel" type="file" accept=".xlsx">
+<label>PDF JS1</label><input id="js1" type="file" accept=".pdf">
+<label>PDF JS2</label><input id="js2" type="file" accept=".pdf">
+<label>PDF JS3</label><input id="js3" type="file" accept=".pdf">
+<button onclick="procesar()">Generar Consolidado</button>
+</div>
+<div class="card"><div id="log"></div></div>
 </div>
 
-<div class="grid">
-<div class="card">
-<h3>Archivos</h3>
-<label>Plantilla Excel</label>
-<input type="file" id="excel" accept=".xlsx">
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-<label>PDF JS1</label>
-<input type="file" id="js1" accept=".pdf">
+function log(t){document.getElementById('log').innerHTML+=t+"<br>";}
 
-<label>PDF JS2</label>
-<input type="file" id="js2" accept=".pdf">
+async function extraerTextoPDF(file){
+ const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;
+ let txt='';
+ for(let i=1;i<=pdf.numPages;i++){
+   const p=await pdf.getPage(i);
+   const c=await p.getTextContent();
+   txt+=c.items.map(x=>x.str).join(' ')+' ';
+ }
+ return txt.replace(/\s+/g,' ');
+}
 
-<label>PDF JS3</label>
-<input type="file" id="js3" accept=".pdf">
+function extraerDatos(texto){
+ const patrones={
+"Consultas totales":/Consultas\s+totales\s+64\s+(\d+)/i,
+"Signos vitales y somatometría":/Signos\s+vitales\s+y\s+somatometría\s+(\d+)/i,
+"Usuarios atendidos":/Usuarios\s+atendidos\s+(\d+)/i,
+"Consultas a mujeres embarazadas":/Consultas\s+a\s+mujeres\s+embarazadas\s+(\d+)/i,
+"Consultas a niños por EDA´s":/Consultas\s+a\s+niños\s+por\s+EDA\S*\s+(\d+)/i,
+"Consultas a niños por IRA´s":/Consultas\s+a\s+niños\s+por\s+IRA\S*\s+(\d+)/i,
+"Consultas a Diabéticos":/Consultas\s+a\s+Diabéticos\s+(\d+)/i,
+"Consultas a Hipertensos":/Consultas\s+a\s+Hipertensos\s+(\d+)/i,
+"Consultas odontológicas":/Consultas\s+odontológicas\s+24\s+(\d+)/i,
+"Pacientes atendidos en Laboratorio clínico":/Laboratorio\s+clínico\s+36\s+(\d+)/i,
+"Antígeno prostático específico (PSA)":/PSA\)\s+INDETERMINADO\s+(\d+)/i,
+"Pacientes atendidos en Rayos X":/Rayos\s+X\s+30\s+(\d+)/i,
+"Pacientes atendidos en Mastografía":/Mastografía\s+45\s+(\d+)/i,
+"Pacientes atendidos totales en Ultrasonido":/Ultrasonido\s+25\s+(\d+)/i,
+"Pacientes atendidos en US Obstétrico":/US\s+Obstétrico\s+(\d+)/i,
+"Pacientes atendidos en US Pélvico":/US\s+Pélvico\s+(\d+)/i,
+"Pacientes atendidos en Densitometría":/Densitometría\s+30\s+(\d+)/i,
+"Pacientes atendidos en Electrocardiograma":/Electrocardiograma\s+30\s+(\d+)/i,
+"Pacientes atendidos en Optometría":/Optometría\s+15\s+(\d+)/i,
+"Pacientes atendidos en Audiometría":/Audiometría\s+20\s+(\d+)/i,
+"Pacientes atendidos en Nutrición":/Nutrición\s+10\s+(\d+)/i,
+"Pacientes atendidos en Psicología":/Psicología\s+45\s+(\d+)/i,
+"Pacientes atendidos en Ambulancia de traslado":/Ambulancia\s+de\s+traslado\s+INDETERMINADO\s+(\d+)/i,
+"Pacientes atendidos en Farmacia":/Farmacia\s+64\s+(\d+)/i,
+"Pacientes atendidos en Pediculosis":/Pediculosis\s+30\s+(\d+)/i,
+"Promoción de la salud":/Promoción\s+de\s+la\s+salud\s+24\s+(\d+)/i,
+"Gestiones":/Gestiones\s+INDETERMINADO\s+(\d+)/i,
+"Total":/Total\s+556\s+(\d+)/i
+ };
+ const d={};
+ for(const [k,r] of Object.entries(patrones)){const m=texto.match(r); d[k]=m?parseInt(m[1]):0;}
+ return d;
+}
 
-<button>Generar Consolidado</button>
-</div>
+function clean(s){
+ return String(s).normalize("NFD").replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+}
 
-<div class="card">
-<h3>Registro</h3>
-<div id="log">Versión base generada correctamente.\nIntegre aquí la lógica PDF.js + SheetJS que ya validaste.</div>
-</div>
-</div>
-</div>
+function llenarHoja(ws,datos){
+ const range=XLSX.utils.decode_range(ws["!ref"]);
+ for(let row=1;row<=range.e.r+1;row++){
+   const c=ws["B"+row];
+   if(!c) continue;
+   const excel=clean(c.v);
+   for(const [serv,val] of Object.entries(datos)){
+      if(excel===clean(serv)){
+        ws["E"+row]={t:"n",v:val};
+      }
+   }
+ }
+}
+
+async function procesar(){
+ try{
+  const excel=document.getElementById('excel').files[0];
+  const js1=document.getElementById('js1').files[0];
+  const js2=document.getElementById('js2').files[0];
+  const js3=document.getElementById('js3').files[0];
+  if(!excel||!js1||!js2||!js3){alert('Seleccione todos los archivos');return;}
+  log('Leyendo Excel...');
+  const wb=XLSX.read(await excel.arrayBuffer(),{type:'array'});
+  const d1=extraerDatos(await extraerTextoPDF(js1));
+  const d2=extraerDatos(await extraerTextoPDF(js2));
+  const d3=extraerDatos(await extraerTextoPDF(js3));
+  llenarHoja(wb.Sheets["Jurisdiccion1"],d1);
+  llenarHoja(wb.Sheets["Jurisdiccion2"],d2);
+  llenarHoja(wb.Sheets["Jurisdiccion3"],d3);
+  XLSX.writeFile(wb,"PRODUCTIVIDAD_CONSOLIDADA.xlsx");
+  log('Consolidado generado correctamente.');
+ }catch(e){console.error(e);alert(e.message);}
+}
+</script>
 </body>
 </html>
